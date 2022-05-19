@@ -27,51 +27,86 @@ var (
 
 func StringSum(input string) (output string, err error) {
 
-	// delete whitespaces
-	input = strings.ReplaceAll(input, " ", "")
+	input = deleteWhitespaces(input)
 
-	// is empty
-	if input == "" {
-		return "", fmt.Errorf(" Empty Input in StringSum(): %w", errorEmptyInput)
+	input, err = checkIsEmpty(input)
+	if err != nil {
+		return input, fmt.Errorf(" Empty Input in StringSum(): %w", err)
 	}
 
-	// contain extra symbols
-	symbols := []rune{45, 43, 49, 50, 51, 52, 53, 54, 55, 56, 57, 32}
-	inputRunes := []rune(input)
-	for _, v := range inputRunes {
-		if find(v, symbols) == -1 {
-			_, errAtoi := strconv.Atoi(string(v))
-			return "", fmt.Errorf("Contain extra symbol: %w", errAtoi)
-		}
+	input, err = checkContainExtraSymbol(input)
+	if err != nil {
+		return input, fmt.Errorf("Contain extra symbol: %w", err)
 	}
 
-	// count of numbers
-	amount := 0
-	input = strings.ReplaceAll(input, "+", "/+")
-	input = strings.ReplaceAll(input, "-", "/-")
-	count := strings.Split(input, "/")
-	start := 0
-	if count[0] == "" {
-		amount--
-		start = 1
-	}
-	amount += len(count)
+	amount := getAmountOfNumbers(input)
 	if amount != 2 {
 		return "", fmt.Errorf(" Error in StringSum: %w", errorNotTwoOperands)
 	}
-	first, _ := strconv.Atoi(count[start])
-	second, _ := strconv.Atoi(count[start+1])
+
+	first, second := getFirstAndSecond(input)
+
 	output = strconv.Itoa(first + second)
 
 	return output, nil
 }
 
-func find(what rune, where []rune) (idx int) {
-	idx = 1
+func deleteWhitespaces(input string) string {
+	return strings.ReplaceAll(input, " ", "")
+}
+
+func isContain(what rune, where []rune) (exist bool) {
 	for _, v := range where {
 		if v == what {
-			return
+			return true
 		}
 	}
-	return -1
+	return
+}
+
+func checkIsEmpty(input string) (string, error) {
+	if input == "" {
+		return "", errorEmptyInput
+	}
+
+	return input, nil
+}
+
+func checkContainExtraSymbol(input string) (string, error) {
+	symbols := []rune{45, 43, 49, 50, 51, 52, 53, 54, 55, 56, 57, 32} // { '-', '+', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' '}
+	inputInRunes := []rune(input)
+	for _, v := range inputInRunes {
+		if isContain(v, symbols) == false {
+			_, errAtoi := strconv.Atoi(string(v)) // get error from strconv package
+			return "", errAtoi
+		}
+	}
+
+	return input, nil
+}
+
+func getAmountOfNumbers(input string) (amount int) {
+	input = strings.ReplaceAll(input, "+", "/+")
+	input = strings.ReplaceAll(input, "-", "/-")
+	count := strings.Split(input, "/")
+	if count[0] == "" { // case "/-3/-5"
+		amount-- // amount == -1
+	}
+	amount += len(count)
+
+	return
+}
+
+func getFirstAndSecond(input string) (first, second int) {
+	input = strings.ReplaceAll(input, "+", "/+") // "3+5" -> "3/+5"
+	input = strings.ReplaceAll(input, "-", "/-")
+	count := strings.Split(input, "/") // count = { "3", "+5"}
+	start := 0
+	if count[0] == "" {
+		start = 1
+	}
+	first, _ = strconv.Atoi(count[start])
+	second, _ = strconv.Atoi(count[start+1])
+
+	return
 }
